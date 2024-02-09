@@ -1,0 +1,36 @@
+import cv2
+import numpy as np
+
+def imgProcessing(image_path):
+    image = cv2.imread(image_path)
+    image = cv2.resize(image, (0,0), fx=7, fy=7)
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    binary_image = cv2.adaptiveThreshold(
+        gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 17, 1.5
+    )
+    kernel = np.ones((5, 5), np.uint8)
+    morph_image = cv2.morphologyEx(binary_image, cv2.MORPH_CLOSE, kernel, iterations=2)
+    return morph_image
+
+def segmentation_of_characters(image_path):
+    processed_image = imgProcessing(image_path)
+    contours, _ = cv2.findContours(processed_image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    segmented_characters = []
+    for contour in contours:
+        MinContourArea = 500
+        if cv2.contourArea(contour) > MinContourArea:
+            x, y, w, h = cv2.boundingRect(contour)
+            
+            character = processed_image[y:y+h, x:x+w]
+            
+            segmented_characters.append(character)
+    return segmented_characters
+
+image_path ='Test_images/1.jpeg'
+answer = segmentation_of_characters(image_path)
+
+for i, character in enumerate(answer):
+    cv2.imshow(f'Character {i+1}', character)
+
+cv2.waitKey(0)
+cv2.destroyAllWindows()
